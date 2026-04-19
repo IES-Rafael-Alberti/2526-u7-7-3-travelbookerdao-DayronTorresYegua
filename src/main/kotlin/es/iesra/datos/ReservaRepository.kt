@@ -1,22 +1,28 @@
 package es.iesra.datos
 
 import es.iesra.dominio.Reserva
+import es.iesra.dominio.ReservaHotel
+import es.iesra.dominio.ReservaVuelo
 
-/**
- * Implementación en memoria del repositorio de reservas.
- */
-class ReservaRepository : IReservaRepository {
-    private val reservas = mutableListOf<Reserva>()
+class ReservaRepository(
+    private val daoVuelo: IDao<ReservaVuelo> = DaoReservaVuelo(),
+    private val daoHotel: IDao<ReservaHotel> = DaoReservaHotel()
+) : IReservaRepository {
 
     override fun agregar(reserva: Reserva): Boolean {
-        var agregado = false
-        // Si no existe, se agrega la reserva a la lista.
-        if (!reservas.contains(reserva)) {
-            reservas.add(reserva)
-            agregado = true
+        return when (reserva) {
+            is ReservaVuelo -> daoVuelo.crear(reserva)
+            is ReservaHotel -> daoHotel.crear(reserva)
+            else -> {
+                println("Tipo de reserva desconocido: ${reserva::class.simpleName}")
+                false
+            }
         }
-        return agregado
     }
 
-    override fun obtenerTodas(): List<Reserva> = reservas.toList()
+    override fun obtenerTodas(): List<Reserva> {
+        val vuelos: List<Reserva> = daoVuelo.leer()
+        val hoteles: List<Reserva> = daoHotel.leer()
+        return vuelos + hoteles
+    }
 }
